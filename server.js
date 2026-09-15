@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const conexao = require("./db.js");
 
 // import express from "express";
 // impor cors from "cors";
@@ -27,9 +28,84 @@ app.get("/", (req, res) => {
     });
 });
 
-app.get("/alunos",(req,res)=> {
-    res.json(ALUNOS);
-})
+app.get("/alunos", async (req,res)=> {
+    try {
+            const [resultado] = await conexao.query("SELECT * FROM alunos;")
+            res.status(200).json(resultado);
+    } catch (error) {
+            console.log(error);
+            res.status(500).json({
+                mensagem: "Erro ao buscar alunos"
+            })
+    }
+});
+
+app.get("/alunos/:id",(req,res)=>{
+    const id = Number(req.params.id);
+
+    const aluno = ALUNOS.find(a => a.id ===id);
+
+    if(!aluno){
+        return res.status(404).json({
+            Mensagem: "Aluno não encontrado"
+           
+        });
+    }
+
+    res.status(200).json(aluno);
+});
+
+app.post("/alunos/cadastrar", (req, res) => {
+    const{nome,curso} = req.body;
+
+    if(!nome || !curso){
+        return res.status(400).json({mensagem: "Nome e curso são obrigatórios"});
+    }
+
+    const novoId = ALUNOS.length > 0 ? Math.max(...ALUNOS.map(aluno.id)) + 1 : 1;
+   // const novoId = ALUNOS.length > 0 ? ALUNOS[ALUNOS.length - 1].d + 1 : 1;
+
+   const novoAluno = {
+    id: novoId,
+    nome : nome,
+    curso : curso
+   };
+
+   ALUNOS.push(novoAluno);
+   res.status(201).json({
+    Mensagem: "Aluno Cadastrado com sucesso"
+   })
+});
+
+app.put("alunos/:id", (req, res) => {
+    const id = Number(req.params.id);
+    const { nome, curso } = req.body;
+
+    const indice = ALUNOS.findIndex(aluno => aluno.id === id);
+
+    if (indice === -1){
+        return res.status(404).json({
+            Mensagem: "ALuno não encontrado"
+        });
+    }
+
+    if (!nome || !curso){
+        return res.status(400).json({
+            Mensagem: "Nome e curso são obrigatórios"
+        })
+    }
+
+    ALUNOS[indice] = {
+        id : id,
+        nome : nome,
+        curso : curso
+    };
+
+    res.status(200).json({
+        Mensagem: "Aluno atualizado com sucesso",
+        aluno: ALUNOS[indice]
+    })
+});
 
 const PORTA = 3000;
 
